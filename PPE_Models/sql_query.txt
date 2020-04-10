@@ -1,0 +1,17 @@
+﻿SELECT StockID,
+Category,
+Description, 
+Inventory, 
+Location, 
+ManufacturerDescription, 
+Packaging,  
+StockNumber,
+UnitOfIssue,
+VendorDescription, 
+Quantity, 
+QuantityOnBackorder, 
+UnitOfIssueUs 
+
+FROM [dbo].[DMmStock]
+WHERE Active = 'Y'
+

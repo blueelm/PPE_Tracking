@@ -1,0 +1,16 @@
+﻿SELECT MM.STOCK.urn AS [StockID], 
+MM.STOCK.category AS [Category], 
+MM.STOCK.description AS [Description], 
+MM.STOCK.inventory AS [Inventory], 
+MM.STOCK.location AS [Location], 
+MM.STOCK.mfr.description AS [ManufacturerDescription],
+MM.STOCK.packaging AS [Packaging],  
+MM.STOCK.number AS [StockNumber],
+MM.STOCK.unit.of.issue AS [UnitOfIssue],
+MM.STOCK.vendor.description AS [VendorDescription]
+MM.STOCK.qty.on.hand AS [Quantity]
+MM.STOCK.qty.on.backorder AS [QuantityOnBackorder]
+MM.STOCK.ui.us AS [UnitOfIssueUs]
+FROM MM.STOCK.main
+
+WHERE MM.STOCK.active = "Y"

@@ -1,0 +1,40 @@
+﻿<div class="row">
+    <div class="col">
+        <div class="codeblock-container">
+            <div class="codeblock-header">
+                <span>@title</span>
+            </div>
+            <pre @attributes="InputAttributes">
+            <code class=@language>@ChildContent</code>
+    </pre>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+@code {
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    [Parameter]
+    public string language { get; set; } = "language-csharp";
+
+    [Parameter]
+    public string title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string lineHighlight
+    {
+        set
+        {
+            if (!String.IsNullOrEmpty(value))
+                InputAttributes["data-line"] = value;
+        }
+    }
+
+    private Dictionary<string, object> InputAttributes { get; set; } =
+        new Dictionary<string, object>();
+}

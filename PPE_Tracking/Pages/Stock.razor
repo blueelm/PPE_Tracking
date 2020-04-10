@@ -1,0 +1,115 @@
+﻿@page "/stock/{URN}"
+@using PPE_Tracking.Data
+@using PPE_Models
+@inject IDataSource dataSource
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+
+@if (stock == null || stocks == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <h3>Stock: @stock.StockNumber</h3>
+    <RadzenTabs Change="@((args) => Change(args))">
+        <Tabs>
+            <RadzenTabsItem Text="Stock">
+
+                <RadzenCard Style="width:600px;">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div>StockID:</div>
+                            <b>@stock.StockID</b>
+                            <div style="margin-top:20px">Inventory:</div>
+                            <b>@stock.Inventory</b>
+                            <div style="margin-top:20px">Location:</div>
+                            <b>@stock.Location</b>
+                            <div style="margin-top:20px">Desc.:</div>
+                            <b>@stock.Description</b>
+                            <div style="margin-top:20px">Vendor:</div>
+                            <b>@stock.Vendor</b>
+                            <div style="margin-top:20px">Manufacturer:</div>
+                            <b>@stock.Manufacturer</b>
+                            <br />
+                        </div>
+                        <div class="col-md-6">
+                            <div>Packaging:</div>
+                            <b>@stock.Packaging</b>
+                            <div style="margin-top:20px">Unit of Issue:</div>
+                            <b>@stock.UnitOfIssue</b>
+                            <div style="margin-top:20px">Quantity:</div>
+                            <b>@stock.Quantity</b>
+                            <div style="margin-top:20px">Quantity Backordered:</div>
+                            <b>@stock.QuantityBackordered</b>
+                            <div style="margin-top:20px">Unit of Issue Unit Smallest:</div>
+                            <b>@stock.UnitOfIssueUnitSmallest</b>
+                        </div>
+                    </div>
+
+                </RadzenCard>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="History">
+                <table class="table" id="stockhx">
+                    <thead>
+                        <tr>
+                            <th>DateTime</th>
+                            <th>QOH</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var stock in stocks)
+                        {
+                            <tr>
+                                <td>@stock.DateTime</td>
+                                <td>@stock.Quantity</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </RadzenTabsItem>
+        </Tabs>
+    </RadzenTabs>
+}
+@code {
+
+    [Parameter]
+    public string URN { get; set; }
+    public PPE_Models.Stock stock { get; set; }
+    public List<StockHistory> stocks { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        stock = await dataSource.GetStock(URN);
+
+        var data = await dataSource.GetHistory(URN, DateTime.MinValue, DateTime.Now, false);
+        stocks = new List<StockHistory>();
+        foreach (var tuple in data)
+        {
+            stocks.Add(new StockHistory() { DateTime = PPE_Worker_Service.Worker.ConvertFromUnixTimestamp(tuple.Item1), Quantity = tuple.Item2, StockID = URN });
+        }
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JSRuntime.InvokeAsync<object>("utility.DataTablesAdd", "#stockhx");
+    }
+
+
+    public void Dispose()
+    {
+        JSRuntime.InvokeAsync<bool>("utility.DataTablesRemove", "#stockhx");
+    }
+
+
+    void Change(int index)
+    {
+        if (index != 1)
+            Dispose();
+
+    }
+
+}

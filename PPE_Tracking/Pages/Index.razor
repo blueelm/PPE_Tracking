@@ -1,0 +1,206 @@
+﻿@using PPE_Tracking.Components
+@inject IJSRuntime _jsRuntime
+@page "/"
+
+<div class="container ">
+    <div class="row">
+        <div class="col">
+            <h1>Blue Elm Company's PPE Tracker</h1>
+            <p>
+                This project aims to provide a starting point for customers to build a materials tracking dashboard out of their MEDITECH system. While the focus was clearly on the current need for PPE tracking,
+                our hope is this project is useful template for developing dashboards and reporting tools against other domains of the MEDITECH system.
+            </p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <h2>What it does</h2>
+            <p>
+                This project collects Materials Management stock information, including Quantity On Hand (QOH), at a user defined interval. With both current and historic stock data, the dashboard
+                aims to provide an easy overview of your organization's current PPE supplies as well as the historic use rate.
+            </p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <h2>Built with</h2>
+            <p>
+                <ul>
+                    <li><a href="https://docs.microsoft.com/en-us/aspnet/core/release-notes/aspnetcore-3.1?view=aspnetcore-3.1" target="_blank">ASP.NET Core 3.1</a></li>
+                    <li><a href="https://docs.microsoft.com/en-us/aspnet/core/blazor/?view=aspnetcore-3.1" target="_blank">Server-side Blazor</a></li>
+                    <li><a href="https://blazor.radzen.com/" target="_blank">Radzen Blazor Components</a></li>
+                    <li><a href="https://www.chartjs.org/" target="_blank">ChartJS</a></li>
+                    <li><a href="https://datatables.net/" target="_blank">Datatables.net</a></li>
+                    <li><a href="https://www.sqlite.org/" target="_blank">SQLite</a></li>
+                </ul>
+            </p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <h2>Features</h2>
+            <p>
+                <ul>
+                    <li>Data Repository integration</li>
+                    <li>Optional real-time MEDITECH integration via <a href="https://www.blueelm.com/opengate-overview" target="_blank">OpenGate</a></li>
+                    <li>Generic data source implementation allowing for non-MEDITECH sources</li>
+                </ul>
+            </p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <h2>Configuration</h2>
+            <p>
+                <b>PPE Tracker</b> supports both MEDITECH's Data Repository and direct MEDITECH access via Blue Elm's OpenGate, an ADO.NET driver that provides real-time, direct access to MEDITECH MAGIC, C/S, and Expanse databases.
+                OpenGate support was built on top of the OpenGate SQL CLR integration, but direct integration with the OpenGate data driver assemblies would be a trivial task.
+            </p>
+            <p>
+                The first step is to decide which option you will use. By default, the project is configured to use Data Repository.
+            </p>
+            <RadzenTabs Change="@((args) => Change(args))">
+                <Tabs>
+                    <RadzenTabsItem Text="Data Repository">
+                        <p>
+                            <h6>Data Repository Configuration:</h6>
+                            <br />
+                            <dl class="row">
+                                <dt class="col-sm-3">ConnectionString (10)</dt>
+                                <dd class="col-sm-9">Enter a valid SQL Server connection string for your MEDITECH DR's LIVE NPR database</dd>
+                                <dt class="col-sm-3">RefreshInterval (12)</dt>
+                                <dd class="col-sm-9">Enter the frequency, in milliseconds, that you wish to retrieve the current stock QOH data</dd>
+                            </dl>
+
+                        </p>
+                        <p>
+                            <CodeHighlight language="language-json" title="appsetings.json" lineHighlight="10,12">
+                                {
+                                "Logging": {
+                                "LogLevel": {
+                                "Default": "Information",
+                                "Microsoft": "Warning",
+                                "Microsoft.Hosting.Lifetime": "Information"
+                                }
+                                },
+                                "AllowedHosts": "*",
+                                "ConnectionString": "Data Source=localhost;Initial Catalog=livedb;Integrated Security=True",
+                                "OpenGateConnectionString": "Platform=CS;Data Source=BEC;HCIS=BEC.LIVEN;Database=MM.BEC",
+                                "RefreshInterval": 600000
+                                }
+                            </CodeHighlight>
+                        </p>
+                    </RadzenTabsItem>
+                    <RadzenTabsItem Text="OpenGate">
+                        <p>
+                            <h6>OpenGate Configuration:</h6>
+                            <br />
+                            <dl class="row">
+                                <dt class="col-sm-3">ConnectionString (10)</dt>
+                                <dd class="col-sm-9">Enter a valid SQL Server connection string for your MEDITECH DR's LIVE NPR database</dd>
+                                <dt class="col-sm-3">OpenGateConnectionString (11)</dt>
+                                <dd class="col-sm-9">Enter a valid OpenGate SQL CLR connection string</dd>
+                                <dt class="col-sm-3">RefreshInterval (12)</dt>
+                                <dd class="col-sm-9">Enter the frequency, in milliseconds, that you wish to retrieve the current stock QOH data</dd>
+                            </dl>
+
+                        </p>
+                        <p>
+                            <CodeHighlight language="language-json" title="appsetings.json" lineHighlight="10,11,12">
+                                {
+                                "Logging": {
+                                "LogLevel": {
+                                "Default": "Information",
+                                "Microsoft": "Warning",
+                                "Microsoft.Hosting.Lifetime": "Information"
+                                }
+                                },
+                                "AllowedHosts": "*",
+                                "ConnectionString": "Data Source=localhost;Initial Catalog=livedb;Integrated Security=True",
+                                "OpenGateConnectionString": "Platform=CS;Data Source=BEC;HCIS=BEC.LIVEN;Database=MM.BEC",
+                                "RefreshInterval": 600000
+                                }
+                            </CodeHighlight>
+                        </p>
+                        <h6>Disable DR as datasource, enable OpenGate</h6>
+                        <br />
+                        You'll need to adjust the application's configuration settings in file Startup.cs, installing an OpenGate IDataSource instance in place of the default DataRepository service.
+                        <p>
+                            <img src="/images/vs.png" alt="Visual Studio screenshot" class="img-responsive" />
+                        </p>
+                        <RadzenTabs Change="@((args) => Change(args))">
+                            <Tabs>
+                                <RadzenTabsItem Text="Before">
+                                    <p>
+                                        <CodeHighlight language="language-csharp" title="Startup.cs" lineHighlight="7,8,9,10">
+                                            public void ConfigureServices(IServiceCollection services)
+                                            {
+                                            services.AddRazorPages();
+                                            services.AddServerSideBlazor();
+
+                                            // Enable below to use DR as data source
+                                            services.AddScoped&lt;IDataSource, DataRepository&gt;
+                                            (sp => new DataRepository(Configuration["ConnectionString"]));
+                                            services.AddHostedService&lt;Worker&gt;
+                                            (sp => new Worker(sp.GetService&lt;ILogger&lt;Worker&gt;&gt;(), Configuration["ConnectionString"], int.Parse(Configuration["RefreshInterval"])));
+
+                                            // Enable below to use OpenGate SQL CLR integration instead of DR.
+                                            //services.AddScoped&lt;IDataSource, OpenGate&gt;(sp => new OpenGate(Configuration["ConnectionString"],Configuration["OpenGateConnectionString"]));
+                                            //services.AddHostedService&lt;Worker&gt;(sp => new OpenGateWorker(sp.GetService&lt;ILogger&lt;OpenGateWorker&gt;&gt;(), Configuration["ConnectionString"],  int.Parse(Configuration["RefreshInterval"]), Configuration["OpenGateConnectionString"]));
+                                            }
+                                        </CodeHighlight>
+                                    </p>
+                                </RadzenTabsItem>
+                                <RadzenTabsItem Text="After">
+                                    <p>
+                                        <CodeHighlight language="language-csharp" title="Startup.cs" lineHighlight="13,14">
+                                            public void ConfigureServices(IServiceCollection services)
+                                            {
+                                            services.AddRazorPages();
+                                            services.AddServerSideBlazor();
+
+                                            // Enable below to use DR as data source
+                                            /*services.AddScoped&lt;IDataSource, DataRepository&gt;
+                                            (sp => new DataRepository(Configuration["ConnectionString"]));
+                                            services.AddHostedService&lt;Worker&gt;
+                                            (sp => new Worker(sp.GetService&lt;ILogger&lt;Worker&gt;&gt;(), Configuration["ConnectionString"], int.Parse(Configuration["RefreshInterval"]))); */
+
+                                            // Enable below to use OpenGate SQL CLR integration instead of DR.
+                                            services.AddScoped&lt;IDataSource, OpenGate&gt;(sp => new OpenGate(Configuration["ConnectionString"],Configuration["OpenGateConnectionString"]));
+                                            services.AddHostedService&lt;Worker&gt;(sp => new OpenGateWorker(sp.GetService&lt;ILogger&lt;OpenGateWorker&gt;&gt;(), Configuration["ConnectionString"],  int.Parse(Configuration["RefreshInterval"]), Configuration["OpenGateConnectionString"]));
+                                            }
+                                        </CodeHighlight>
+                                    </p>
+                                </RadzenTabsItem>
+                            </Tabs>
+                        </RadzenTabs>
+                    </RadzenTabsItem>
+                </Tabs>
+            </RadzenTabs>
+
+            <p>
+                <h6>Final Steps:</h6>
+                At this point, you'll want to test locally via Visual Studio. You may consider updating the SQL query to include a condition on a single SourceID to improve performance (and avoid issues with multiple-source DR databases). Once satisified that the tool is working, you can
+                follow <a href="https://docs.microsoft.com/en-us/aspnet/core/tutorials/publish-to-iis?view=aspnetcore-3.1&tabs=visual-studio" target="_blank">Microsoft's directions</a> to publish the application to be hosted by IIS. <b>
+                    While the application can and will run self-hosted,
+                    Microsoft recommends all production ASP.NET Core applications be deployed with IIS as a reverse proxy.
+                </b> Authentication, authorization, SSL certificate management,
+                etc. can all be configured via IIS.
+            </p>
+        </div>
+    </div>
+</div>
+
+@code
+{
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await _jsRuntime.InvokeVoidAsync("Prism.highlightAll");
+    }
+
+
+    void Change(int index)
+    {
+
+        _jsRuntime.InvokeVoidAsync("Prism.highlightElement($('.codeblock-container code')[0]);");
+    }
+}

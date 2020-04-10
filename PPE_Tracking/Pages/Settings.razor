@@ -1,0 +1,125 @@
+﻿@page "/settings"
+@using System.Collections.Concurrent;
+@using System.Text.Json;
+@using Microsoft.Extensions.DependencyInjection
+@using PPE_Tracking.Data
+@inject IJSRuntime _jsRuntime
+@inject IDataSource dataSource
+@inherits OwningComponentBase
+@implements IDisposable
+<h3>Settings</h3>
+@if (PPE_Worker_Service.Worker.TrackedStocks == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-12">
+
+            <table class="table" id="stocks">
+                <thead>
+                    <tr>
+                        <th>StockId</th>
+                        <th>Number</th>
+                        <th>Inventory</th>
+                        <th>Description</th>
+                        <th>Location</th>
+                        <th>Manufacturer</th>
+                        <th>Vendor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+@code {
+
+    DotNetObjectReference<PPE_Tracking.Pages.Settings> thisRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            thisRef = DotNetObjectReference.Create(this);
+            await _jsRuntime.InvokeAsync<object>("settingsPage.DataTableAdd", "#stocks", thisRef);
+        }
+    }
+
+    [JSInvokable]
+    public async Task AddStock(string stockId)
+    {
+        if (PPE_Worker_Service.Worker.AllStocks.TryGetValue(stockId, out var stock))
+            PPE_Worker_Service.Worker.TrackedStocks.TryAdd(stock.StockID, stock);
+
+        await SaveChanges();
+        StateHasChanged();
+        return;
+    }
+
+    [JSInvokable]
+    public async Task RemoveStock(string stockId)
+    {
+        if (PPE_Worker_Service.Worker.TrackedStocks.TryGetValue(stockId, out var stock))
+            PPE_Worker_Service.Worker.TrackedStocks.Remove(stock.StockID, out _);
+
+        await SaveChanges();
+        StateHasChanged();
+        return;
+    }
+
+    [JSInvokable]
+    public Task<PPE_Models.DataTablesResult<PPE_Models.Stock>> LoadData(PPE_Models.DataTablesParameters dataTablesParameters)
+    {
+        var models = PPE_Worker_Service.Worker.AllStocks.Values.AsEnumerable();
+        var serverCount = PPE_Worker_Service.Worker.AllStocks.Values.Count;
+        var filterCount = PPE_Worker_Service.Worker.AllStocks.Values.Count;
+
+        if (!String.IsNullOrEmpty(dataTablesParameters.SortOrder))
+        {
+            var order = dataTablesParameters.SortOrder.Split(' ');
+            if (order.Length > 1)
+                models = models.OrderByDescending(s => s[order[0]]);
+            else
+                models = models.OrderBy(t => t[order[0]]);
+        }
+
+        if (!String.IsNullOrEmpty(dataTablesParameters.Search.Value))
+        {
+            //models = models.Where(x => JsonSerializer.Serialize<object>(new { x.StockNumber, x.Description, x.Inventory, x.Location, x.Manufacturer, x.Vendor }).Contains(dataTablesParameters.Search.Value)).ToList();
+            models = models.Where(x => x.SearchFields.Any(s => (s ?? string.Empty).Contains(dataTablesParameters.Search.Value)));
+            filterCount = models.Count();
+        }
+
+        List<PPE_Models.Stock> modelList = models.Select((r, i) => new { Row = r, Index = i }).Where(x => x.Index >= dataTablesParameters.Start).Take(dataTablesParameters.Length).Select(x => x.Row).ToList();
+        foreach (var model in modelList)
+        {
+            model.DataTables_RowAttr = null;
+
+            if (PPE_Worker_Service.Worker.TrackedStocks.ContainsKey(model.StockID))
+                model.DataTables_RowAttr = new { sel = 1 };
+        }
+        var result = new PPE_Models.DataTablesResult<PPE_Models.Stock>()
+        {
+            data = modelList,
+            draw = dataTablesParameters.Draw,
+            recordsTotal = serverCount,
+            recordsFiltered = filterCount
+        };
+
+        return Task.FromResult(result);
+    }
+
+    private async Task SaveChanges()
+    {
+        await dataSource.SaveChanges();
+    }
+
+    public void Dispose()
+    {
+        thisRef?.Dispose();
+        _jsRuntime.InvokeAsync<bool>("utility.DataTablesRemove", "#stocks");
+    }
+}

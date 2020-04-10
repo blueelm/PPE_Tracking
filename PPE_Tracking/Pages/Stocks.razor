@@ -1,0 +1,53 @@
+﻿@page "/stocks"
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+@using PPE_Tracking.Data
+
+    <h3>Last Updated: @PPE_Worker_Service.Worker.LastUpdated</h3>
+@if (PPE_Worker_Service.Worker.TrackedStocks == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{    
+    <table class="table" id="stocks">
+        <thead>
+            <tr>
+                <th>Number</th>
+                <th>Inventory</th>
+                <th>Desc.</th>
+                <th>QOH</th>
+                <th>Backordered</th>
+                <th>Unit of Issue</th>
+                <th>UI Unit Smallest</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var stock in PPE_Worker_Service.Worker.TrackedStocks.Values)
+            {
+            <tr>
+                <td><a href="/stock/@stock.StockID">@stock.StockNumber</a></td>
+                <td>@stock.Inventory</td>
+                <td>@stock.Description</td>
+                <td>@stock.Quantity</td>
+                <td>@stock.QuantityBackordered</td>
+                <td>@stock.UnitOfIssue</td>
+                <td>@stock.UnitOfIssueUnitSmallest</td>
+            </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code
+{ 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JSRuntime.InvokeAsync<object>("utility.DataTablesAdd", "#stocks");
+    }
+
+    public void Dispose()
+    {
+        JSRuntime.InvokeAsync<bool>("utility.DataTablesRemove", "#stocks");
+    }
+}
